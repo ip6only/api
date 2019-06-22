@@ -18,10 +18,10 @@ cat <<EOF >> /etc/rc.local
 #!/bin/sh
 # remove IPv4 default route
 sleep 1
-interface=$(ifconfig | sed -En 's/^(e[[:alnum:]]+):.+$/\1/p')
-gateway=$(route -4n | sed -En 's/^0\.0\.0\.0[[:space:]]+(10\.[0-9]+\.[0-9]+\.[0-9]+).+/\1/p')
-route add -net 10.0.0.0 netmask 255.0.0.0 gw $gateway dev $interface
-route delete default dev $interface
+interface=\$(ifconfig | sed -En 's/^(e[[:alnum:]]+):.+$/\1/p')
+gateway=\$(route -4n | sed -En 's/^0\.0\.0\.0[[:space:]]+(10\.[0-9]+\.[0-9]+\.[0-9]+).+/\1/p')
+route add -net 10.0.0.0 netmask 255.0.0.0 gw \$gateway dev \$interface
+route delete default dev \$interface
 exit 0
 EOF
 chmod +x /etc/rc.local
