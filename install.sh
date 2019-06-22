@@ -61,6 +61,7 @@ printf 'Done!\n'
 printf 'Creating ip6only user... '
 mkdir /home/ip6only
 useradd -s /bin/bash ip6only
+chown -R ip6only:ip6only /home/ip6only
 printf 'Done!\n'
 
 printf 'Setting npm proxies for ip6only user... '
