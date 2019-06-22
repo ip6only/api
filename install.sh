@@ -13,6 +13,22 @@ printf '[Resolve]\nDNS=2606:4700:4700::1111' > /etc/systemd/resolved.conf
 service systemd-resolved restart
 printf 'Done!\n'
 
+printf 'Removing IPv4 default route... '
+cat <<EOF >> /etc/rc.local
+#!/bin/sh
+# remove IPv4 default route
+sleep 1
+interface=$(ifconfig | sed -En 's/^(e[[:alnum:]]+):.+$/\1/p')
+gateway=$(route -4n | sed -En 's/^0\.0\.0\.0[[:space:]]+(10\.[0-9]+\.[0-9]+\.[0-9]+).+/\1/p')
+route add -net 10.0.0.0 netmask 255.0.0.0 gw $gateway dev $interface
+route delete default dev $interface
+exit 0
+EOF
+chmod +x /etc/rc.local
+route add -net 10.0.0.0 netmask 255.0.0.0 gw $(route -4n | sed -En 's/^0\.0\.0\.0[[:space:]]+(10\.[0-9]+\.[0-9]+\.[0-9]+).+/\1/p') dev $(ifconfig | sed -En 's/^(e[[:alnum:]]+):.+$/\1/p')
+route delete default dev $(ifconfig | sed -En 's/^(e[[:alnum:]]+):.+$/\1/p')
+printf 'Done!\n'
+
 if test -e /etc/apt/sources.list.d/scaleway*; then
 	printf 'Removing scaleway repository... '
 	rm /etc/apt/sources.list.d/scaleway*
