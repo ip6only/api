@@ -54,19 +54,16 @@ systemctl restart squid
 printf 'Done!\n'
 
 printf 'Installing pm2 via npm... '
-npm config set proxy http://proxy.localhost:8080
-npm config set https-proxy http://proxy.localhost:8080
+printf 'proxy=http://proxy.localhost:8080/\nhttps-proxy=http://proxy.localhost:8080\n' > /root/.npmrc
 npm install --silent --no-progress --global pm2@latest >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Creating ip6only user... '
 mkdir /home/ip6only
-useradd -u ip6only -s /bin/bash
+useradd -s /bin/bash ip6only
 printf 'Done!\n'
 
 printf 'Setting npm proxies for ip6only user... '
-su ip6only
-npm config set proxy http://proxy.localhost:8080
-npm config set https-proxy http://proxy.localhost:8080
-exit
+printf 'proxy=http://proxy.localhost:8080/\nhttps-proxy=http://proxy.localhost:8080\n' > /home/ip6only/.npmrc
+chown ip6only:ip6only /home/ip6only/.npmrc
 printf 'Done!\n'
