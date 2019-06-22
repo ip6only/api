@@ -2,6 +2,12 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
+printf 'Condensing annoying motd... ';
+chmod -x /etc/update-motd.d/50-motd-news
+chmod -x /etc/update-motd.d/50-scw
+chmod -x /etc/update-motd.d/60-unminimize
+printf 'Done!\n'
+
 printf 'Setting Cloudflare DNS... '
 printf '[Resolve]\nDNS=2606:4700:4700::1111' > /etc/systemd/resolved.conf
 service systemd-resolved restart
