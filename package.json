@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/BenjaminEHowe/ip6only-api/issues"
   },
-  "homepage": "https://github.com/BenjaminEHowe/ip6only-api#readme"
+  "homepage": "https://github.com/BenjaminEHowe/ip6only-api#readme",
+  "dependencies": {
+    "puppeteer": "^1.18.0"
+  }
 }
