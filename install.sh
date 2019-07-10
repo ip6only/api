@@ -2,19 +2,12 @@
 
 export DEBIAN_FRONTEND=noninteractive
 
-printf 'Condensing annoying motd... ';
-chmod -x /etc/update-motd.d/50-motd-news
-chmod -x /etc/update-motd.d/50-scw
-chmod -x /etc/update-motd.d/60-unminimize
-printf 'Done!\n'
-
 printf 'Setting Cloudflare DNS... '
-printf '[Resolve]\nDNS=2606:4700:4700::1111' > /etc/systemd/resolved.conf
-service systemd-resolved restart
+printf 'nameserver 2606:4700:4700::1111\nnameserver 2606:4700:4700::1001' > /etc/resolve.conf
 printf 'Done!\n'
 
 printf 'Removing IPv4 default route... '
-cat <<EOF >> /etc/rc.local
+cat <<EOF > /etc/rc.local
 #!/bin/sh
 # remove IPv4 default route
 sleep 1
@@ -25,19 +18,7 @@ route delete default dev \$interface
 exit 0
 EOF
 chmod +x /etc/rc.local
-route add -net 10.0.0.0 netmask 255.0.0.0 gw $(route -4n | sed -En 's/^0\.0\.0\.0[[:space:]]+(10\.[0-9]+\.[0-9]+\.[0-9]+).+/\1/p') dev $(ifconfig | sed -En 's/^(e[[:alnum:]]+):.+$/\1/p')
-route delete default dev $(ifconfig | sed -En 's/^(e[[:alnum:]]+):.+$/\1/p')
-printf 'Done!\n'
-
-if test -e /etc/apt/sources.list.d/scaleway*; then
-	printf 'Removing scaleway repository... '
-	rm /etc/apt/sources.list.d/scaleway*
-	printf 'Done!\n'
-fi
-
-printf 'Removing cloud-init... '
-apt purge -y cloud-init >/dev/null 2>&1
-apt autoremove --purge -y >/dev/null 2>&1
+/etc/rc.local >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Updating packages... '
@@ -46,7 +27,7 @@ apt dist-upgrade -y >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Installing basic sysadmin tools... '
-apt install -y curl inetutils-traceroute inetutils-ping nano vim wget >/dev/null 2>&1
+apt install -y curl dnsutils inetutils-traceroute inetutils-ping nano vim wget >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Setting up nodesource repo... '
@@ -56,7 +37,9 @@ apt update >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Installing packages... '
-apt install -y git nginx nodejs squid ufw >/dev/null 2>&1
+echo iptables-persistent iptables-persistent/autosave_v4 boolean false | debconf-set-selections
+echo iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections
+apt install -y git iptables iptables-persistent nginx nodejs squid >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Installing Chrome dependencies... '
@@ -64,13 +47,18 @@ apt install -y gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 lib
 printf 'Done!\n'
 
 printf 'Configuring firewall... '
-ufw default allow outgoing >/dev/null 2>&1
-ufw default deny incoming >/dev/null 2>&1
-ufw allow 22 >/dev/null 2>&1
-ufw allow 80 >/dev/null 2>&1
-ufw allow 443 >/dev/null 2>&1
-ufw allow from 2a02:8010:6452::/48 >/dev/null 2>&1
-ufw --force enable >/dev/null 2>&1
+cat <<EOF > /etc/iptables/rules.v6
+*filter
+:INPUT DROP [0:0]
+:FORWARD DROP [0:0]
+:OUTPUT ACCEPT [696:87186]
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -p ipv6-icmp -j ACCEPT
+-A INPUT -s 2a02:8010:6452::/48 -j ACCEPT
+COMMIT
+EOF
+netfilter-persistent reload >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Configuring squid... '
