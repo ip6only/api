@@ -47,7 +47,7 @@ cat <<EOF > /etc/iptables/rules.v6
 *filter
 :INPUT DROP [0:0]
 :FORWARD DROP [0:0]
-:OUTPUT ACCEPT [696:87186]
+:OUTPUT ACCEPT [0:0]
 -A INPUT -i lo -j ACCEPT
 -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -p ipv6-icmp -j ACCEPT
