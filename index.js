@@ -7,7 +7,7 @@ const puppeteer = require('puppeteer-core');
 const app = express();
 const port = 3000;
 
-const webPorts = [
+const permittedPorts = [
   '80',
   '443',
   '591',
@@ -23,49 +23,115 @@ const webPorts = [
   '8880'
 ];
 
-async function generateErrorImage(text) {
-    image = await new jimp(800, 600, '#C0C0C0');
-    font = await jimp.loadFont(jimp.FONT_SANS_16_BLACK);
-    image.print(font, 0, 0, { 'text': text, 'alignmentX': jimp.HORIZONTAL_ALIGN_CENTER, 'alignmentY': jimp.VERTICAL_ALIGN_MIDDLE }, 800, 600);
+const permittedProtocols = [
+  'http',
+  'https'
+];
+
+const defaultWidth = 1280;
+const maximumWidth = 1920;
+const defaultHeight = 800;
+const maximumHeight = 1200;
+
+async function generateErrorImage(text, width, height) {
+    image = await new jimp(width, height, '#C0C0C0');
+    font = await jimp.loadFont(jimp.FONT_SANS_32_BLACK);
+    image.print(font, 0, 0, { 'text': 'Error: ' + text, 'alignmentX': jimp.HORIZONTAL_ALIGN_CENTER, 'alignmentY': jimp.VERTICAL_ALIGN_MIDDLE }, width, height);
     return await image.getBufferAsync(jimp.MIME_PNG);
 }
 
 app.get('/favicon.ico', (req, res) => { return res.status(404).send() });
 
 app.get('/screenshot/:url', async (req, res) => {
+  // set up image and imageContentType
   let image = undefined;
   let imageContentType = undefined;
+
+  // set width
+  let width = defaultWidth;
+  if (req.query.width && !isNaN(parseInt(req.query.width))) {
+    width = parseInt(req.query.width);
+  }
+  if (maximumWidth < width) {
+    image = await generateErrorImage('maximum width ' + maximumWidth + ' exceeded', defaultWidth, defaultHeight);
+    imageType = 'image/png';
+  }
+
+  // set height
+  let height = defaultHeight;
+  if (req.query.height && !isNaN(parseInt(req.query.height))) {
+    height = parseInt(req.query.height);
+  }
+  if (maximumHeight < height) {
+    image = await generateErrorImage('maximum height ' + maximumHeight + ' exceeded', defaultWidth, defaultHeight);
+    imageType = 'image/png';
+  }
+
+  // set URL
   const url = new URL(decodeURIComponent(req.params.url));
-  if (url.protocol == 'view-source:') {
-    image = await generateErrorImage('Error: protocol ' + url.protocol.slice(0, -1) + ' not permitted');
-    imageContentType = 'image/png';
-  }
-  if (url.port && !(webPorts.includes(url.port))) {
+
+  // check port
+  if (url.port && !permittedPorts.includes(url.port)) {
     // if we're using a non-default port that hasn't been permitted, block
-    image = await generateErrorImage('Error: port ' + url.port + ' not permitted');
-    imageContentType = 'image/png';
+    image = await generateErrorImage('port ' + url.port + ' not permitted', width, height);
+    imageType = 'image/png';
   }
-  if (!image) { // if we don't yet have an image, generate one
+
+  // check protocol
+  if (!permittedProtocols.includes(url.protocol.slice(0, -1))) {
+    image = await generateErrorImage('protocol ' + url.protocol.slice(0, -1) + ' not permitted', width, height);
+    imageType = 'image/png';
+  }
+
+  // if we don't yet have an image, generate one
+  if (!image) {
+    // launch browser
     const browser = await puppeteer.launch({
       'args': ['--headless', '--disable-gpu', '--disable-features=VizDisplayCompositor'],
       'executablePath': '/usr/bin/chromium-browser'
     });
+
+    // set up page and viewport
     const page = await browser.newPage();
+    page.setViewport({ 'width': width, 'height': height, 'deviceScaleFactor': 1 });
+
     try {
+      // attempt to navigate to the URL
       await page.goto(url);
+
+      // set offset (for screenshot)
+      let offset = 0;
+      if (req.query.offset && !isNaN(parseInt(req.query.offset))) {
+        offset = parseInt(req.query.offset);
+      }
+
+      // get document height
+      const documentHeight = await page.evaluate(() => {
+        return document.documentElement.scrollHeight;
+      });
+
+      // check we're not exceeding the document bounds
+      if (documentHeight < (offset + height)) {
+        height = documentHeight - offset;
+      }
+
+      // take screenshot and set content type
       image = await page.screenshot({
-        'fullPage': true,
+        'clip': {'x': 0, 'y': offset, 'width': width, 'height': height},
         'type': 'jpeg'
       });
-      imageContentType = 'image/jpeg';
+      imageType = 'image/jpeg';
     } catch(exception) {
-      image = await generateErrorImage('Error: ' + exception.message);
-      imageContentType = 'image/png';
+      // generate error and set content type
+      image = await generateErrorImage(exception.message, width, height);
+      imageType = 'image/png';
     }
     await browser.close();
   }
+
+  // send the response back to the browser
   res.writeHead(200, {
-    'Content-Type': imageContentType,
+    'Content-Type': imageType,
     'Content-Length': image.length
   });
   res.end(image, 'binary');
