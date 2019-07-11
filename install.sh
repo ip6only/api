@@ -52,6 +52,8 @@ cat <<EOF > /etc/iptables/rules.v6
 -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -p ipv6-icmp -j ACCEPT
 -A INPUT -s 2a02:8010:6452::/48 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
 COMMIT
 EOF
 netfilter-persistent reload >/dev/null 2>&1
