@@ -8,8 +8,12 @@ const puppeteer = require('puppeteer-core');
     'executablePath': '/usr/bin/chromium-browser'
   });
   const page = await browser.newPage();
-  await page.goto('https://example.com');
-  await page.screenshot({path: 'example.png'});
+  await page.goto('https://bitbucket.org');
+  await page.screenshot({
+    'fullPage': true,
+    'path': 'example.jpg',
+    'type': 'jpeg'
+  });
 
   await browser.close();
 })();
