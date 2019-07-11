@@ -4,6 +4,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 printf 'Setting Cloudflare DNS... '
 printf 'nameserver 2606:4700:4700::1111\nnameserver 2606:4700:4700::1001' > /etc/resolve.conf
+chmod -w /etc/resolv.conf
 printf 'Done!\n'
 
 printf 'Removing IPv4 default route... '
