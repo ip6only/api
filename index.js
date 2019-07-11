@@ -36,6 +36,10 @@ app.get('/screenshot/:url', async (req, res) => {
   let image = undefined;
   let imageContentType = undefined;
   const url = new URL(decodeURIComponent(req.params.url));
+  if (url.protocol == 'view-source:') {
+    image = await generateErrorImage('Error: protocol ' + url.protocol.slice(0, -1) + ' not permitted');
+    imageContentType = 'image/png';
+  }
   if (url.port && !(webPorts.includes(url.port))) {
     // if we're using a non-default port that hasn't been permitted, block
     image = await generateErrorImage('Error: port ' + url.port + ' not permitted');
