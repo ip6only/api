@@ -1,30 +1,39 @@
-#!/bin/sh
+##!/bin/sh
 
 export DEBIAN_FRONTEND=noninteractive
 
-printf 'Setting Cloudflare DNS... '
-printf 'nameserver 2606:4700:4700::1111\nnameserver 2606:4700:4700::1001' > /etc/resolve.conf
+# NOTE: change the below as required
+printf 'Setting /etc/network/interfaces... '
+cat <<EOF > /etc/network/interfaces
+auto eth0
+allow-hotplug eth0
+iface eth0 inet dhcp
+    post-up /sbin/route delete default gw 192.168.6.1 eth0
+iface eth0 inet6 auto
+    pre-up /sbin/ip token set ::6a00 dev eth0
+EOF
+printf 'Done!\n'
+
+printf 'Setting custom config.txt parameters... '
+cat <<EOF >> /boot/config.txt
+dtoverlay=pi3-disable-wifi
+dtoverlay=pi3-disable-bt
+dtparam=poe_fan_temp0=65000,poe_fan_temp0_hyst=10000,poe_fan_temp1=70000
+EOF
+printf 'Done!\n'
+
+printf 'Setting CleanBrowsing DNS... '
+printf 'nameserver 2a0d:2a00:1::1\nnameserver 2a0d:2a00:2::1' > /etc/resolve.conf
 chmod -w /etc/resolv.conf
 printf 'Done!\n'
 
-printf 'Removing IPv4 default route... '
-cat <<EOF > /etc/rc.local
-#!/bin/sh
-# remove IPv4 default route
-sleep 1
-interface=\$(ifconfig | sed -En 's/^(e[[:alnum:]]+):.+$/\1/p')
-gateway=\$(route -4n | sed -En 's/^0\.0\.0\.0[[:space:]]+(10\.[0-9]+\.[0-9]+\.[0-9]+).+/\1/p')
-route add -net 10.0.0.0 netmask 255.0.0.0 gw \$gateway dev \$interface
-route delete default dev \$interface
-exit 0
-EOF
-chmod +x /etc/rc.local
-/etc/rc.local >/dev/null 2>&1
+printf 'Setting apt mirror... '
+printf 'deb http://mirrorservice.org/sites/archive.raspbian.org/raspbian/ buster main contrib non-free rpi' > /etc/apt/sources.list
 printf 'Done!\n'
 
 printf 'Updating packages... '
 apt update >/dev/null 2>&1
-apt dist-upgrade -y >/dev/null 2>&1
+apt upgrade -y >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Installing basic sysadmin tools... '
@@ -33,7 +42,7 @@ printf 'Done!\n'
 
 printf 'Setting up nodesource repo... '
 curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - >/dev/null 2>&1
-echo 'deb https://deb.nodesource.com/node_12.x bionic main' > /etc/apt/sources.list.d/nodesource.list
+echo 'deb https://deb.nodesource.com/node_12.x buster main' > /etc/apt/sources.list.d/nodesource.list
 apt update >/dev/null 2>&1
 printf 'Done!\n'
 
@@ -77,7 +86,5 @@ useradd -s /bin/bash ip6only
 chown -R ip6only:ip6only /home/ip6only
 printf 'Done!\n'
 
-printf 'Setting npm proxies for ip6only user... '
-printf 'proxy=http://proxy.localhost:8080/\nhttps-proxy=http://proxy.localhost:8080\n' > /home/ip6only/.npmrc
-chown ip6only:ip6only /home/ip6only/.npmrc
-printf 'Done!\n'
+printf 'Setup complete! The system will now reboot to apply the configuration changes...\n'
+reboot
