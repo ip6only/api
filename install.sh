@@ -8,7 +8,6 @@ cat <<EOF > /etc/network/interfaces
 auto eth0
 allow-hotplug eth0
 iface eth0 inet dhcp
-    post-up /sbin/route delete default gw 192.168.6.1 eth0
 iface eth0 inet6 auto
     pre-up /sbin/ip token set ::6a00 dev eth0
 EOF
