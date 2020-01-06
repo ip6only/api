@@ -122,7 +122,7 @@ app.get('/screenshot/:url', async (req, res) => {
     res.end(JSON.stringify({image}));
   } catch(exception) {;
     // generate error and set content type
-    sendError(exception.message);
+    sendError(res, exception.message);
   }
 });
 
