@@ -46,37 +46,7 @@ apt update >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Installing packages... '
-echo iptables-persistent iptables-persistent/autosave_v4 boolean false | debconf-set-selections
-echo iptables-persistent iptables-persistent/autosave_v6 boolean false | debconf-set-selections
-apt install -y chromium-browser git iptables iptables-persistent nginx nodejs squid >/dev/null 2>&1
-printf 'Done!\n'
-
-printf 'Configuring firewall... '
-cat <<EOF > /etc/iptables/rules.v6
-*filter
-:INPUT DROP [0:0]
-:FORWARD DROP [0:0]
-:OUTPUT ACCEPT [0:0]
--A INPUT -i lo -j ACCEPT
--A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
--A INPUT -p ipv6-icmp -j ACCEPT
--A INPUT -s 2a02:8010:6452::/48 -j ACCEPT
--A INPUT -p tcp -m tcp --dport 80 -j ACCEPT
--A INPUT -p tcp -m tcp --dport 443 -j ACCEPT
-COMMIT
-EOF
-netfilter-persistent reload >/dev/null 2>&1
-printf 'Done!\n'
-
-printf 'Configuring squid... '
-sed -i '1s/^/http_port 8080\nvisible_hostname proxy.localhost\n\n/' /etc/squid/squid.conf
-printf '::1\t\tproxy.localhost\n' >> /etc/hosts
-systemctl restart squid
-printf 'Done!\n'
-
-printf 'Installing pm2 via npm... '
-printf 'proxy=http://proxy.localhost:8080/\nhttps-proxy=http://proxy.localhost:8080\n' > /root/.npmrc
-npm install --silent --no-progress --global pm2@latest >/dev/null 2>&1
+apt install -y chromium-browser nginx nodejs screen >/dev/null 2>&1
 printf 'Done!\n'
 
 printf 'Creating ip6only user... '
