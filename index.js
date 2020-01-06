@@ -1,7 +1,6 @@
 #!/usr/bin/node
 
 const express = require('express');
-const jimp = require('jimp');
 const puppeteer = require('puppeteer-core');
 
 const app = express();
@@ -47,13 +46,11 @@ app.get('/screenshot/:url', async (req, res) => {
       width = parseInt(req.query.width);
     }
     if (isNaN(width)) {
-      const image = await generateErrorImage('width ' + req.query.width + ' doesn\'t appear to be a number');
-      sendImage(res, image, 'image/png');
+      sendError(res, 'width ' + req.query.width + ' doesn\'t appear to be a number');
       return;
     }
     if (maximumWidth < width) {
-      const image = await generateErrorImage('maximum width ' + maximumWidth + ' exceeded');
-      sendImage(res, image, 'image/png');
+      sendError(res, 'maximum width ' + maximumWidth + ' exceeded');
       return;
     }
 
@@ -63,13 +60,11 @@ app.get('/screenshot/:url', async (req, res) => {
       height = parseInt(req.query.height);
     }
     if (isNaN(height)) {
-      const image = await generateErrorImage('height ' + req.query.height + ' doesn\'t appear to be a number');
-      sendImage(res, image, 'image/png');
+      sendError(res, 'height ' + req.query.height + ' doesn\'t appear to be a number');
       return;
     }
     if (maximumHeight < height) {
-      const image = await generateErrorImage('maximum height ' + maximumHeight + ' exceeded');
-      sendImage(res, image, 'image/png');
+      sendError(res, 'maximum height ' + maximumHeight + ' exceeded');
       return;
     }
 
@@ -79,15 +74,13 @@ app.get('/screenshot/:url', async (req, res) => {
     // check port
     if (url.port && !permittedPorts.includes(url.port)) {
       // if we're using a non-default port that hasn't been permitted, block
-      const image = await generateErrorImage('port ' + url.port + ' not permitted', width, height);
-      sendImage(res, image, 'image/png');
+      sendError(res, 'port ' + url.port + ' not permitted');
       return;
     }
 
     // check protocol
     if (!permittedProtocols.includes(url.protocol.slice(0, -1))) {
-      const image = await generateErrorImage('protocol ' + url.protocol.slice(0, -1) + ' not permitted', width, height);
-      sendImage(res, image, 'image/png');
+      sendError(res, 'protocol ' + url.protocol.slice(0, -1) + ' not permitted');
       return;
     }
 
@@ -123,41 +116,18 @@ app.get('/screenshot/:url', async (req, res) => {
     // take screenshot and set content type
     const image = await page.screenshot({
       'clip': {'x': 0, 'y': offset, width, height},
+      'encoding': 'base64',
       'type': 'jpeg'
     });
-    sendImage(res, image, 'image/jpeg');
-  } catch(exception) {
+    res.end(JSON.stringify({image}));
+  } catch(exception) {;
     // generate error and set content type
-    const image = await generateErrorImage(exception.message, width, height);
-    sendImage(res, image, 'image/png');
+    sendError(exception.message);
   }
 });
 
 app.listen(port, () => console.log(`ip6only API listening on port ${port}!`));
 
-async function generateErrorImage(text, width=defaultWidth, height=defaultHeight) {
-    const image = await new jimp(width, height, '#C0C0C0');
-    const font = await selectFontSizeFromWidth(width);
-    text = 'Error: ' + text;
-    const alignmentX = jimp.HORIZONTAL_ALIGN_CENTER;
-    const alignmentY = jimp.VERTICAL_ALIGN_MIDDLE;
-    image.print(font, 0, 0, { text, alignmentX, alignmentY }, width, height);
-    return await image.getBufferAsync('image/png');
-}
-
-async function selectFontSizeFromWidth(width) {
-  let font = undefined;
-  if (width < 800) {
-    font = await jimp.loadFont(jimp.FONT_SANS_16_BLACK);
-  } else if (width < 1400) {
-    font = await jimp.loadFont(jimp.FONT_SANS_32_BLACK);
-  } else {
-    font = await jimp.loadFont(jimp.FONT_SANS_64_BLACK);
-  }
-  return font;
-}
-
-function sendImage(response, image, imageType) {
-  response.type(imageType);
-  response.send(image);
+function sendError(response, error) {
+  response.end(JSON.stringify({error}));
 }
