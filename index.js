@@ -4,7 +4,7 @@ const express = require('express');
 const puppeteer = require('puppeteer-core');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const permittedPorts = [
   '80',
