@@ -36,51 +36,53 @@ const maximumHeight = 1200;
 let width = undefined;
 let height = undefined;
 
-app.get('/favicon.ico', (req, res) => { return res.status(404).send() });
+app.get('/favicon.ico', (request, response) => { return response.status(404).send() });
 
-app.get('/screenshot/:url', async (req, res) => {
+app.get('/screenshot/:url', async (request, response) => {
+  let errors = [];
+
   try {
     // set width
     width = defaultWidth;
-    if (req.query.width) {
-      width = parseInt(req.query.width);
+    if (request.query.width) {
+      width = parseInt(request.query.width);
     }
     if (isNaN(width)) {
-      sendError(res, 'width ' + req.query.width + ' doesn\'t appear to be a number');
-      return;
+      errors.push('Width ' + request.query.width + ' doesn\'t appear to be a number');
     }
     if (maximumWidth < width) {
-      sendError(res, 'maximum width ' + maximumWidth + ' exceeded');
-      return;
+      errors.push('Maximum width ' + maximumWidth + ' exceeded');
     }
 
     // set height
     height = defaultHeight;
-    if (req.query.height) {
-      height = parseInt(req.query.height);
+    if (request.query.height) {
+      height = parseInt(request.query.height);
     }
     if (isNaN(height)) {
-      sendError(res, 'height ' + req.query.height + ' doesn\'t appear to be a number');
-      return;
+      errors.push('Height ' + request.query.height + ' doesn\'t appear to be a number');
     }
     if (maximumHeight < height) {
-      sendError(res, 'maximum height ' + maximumHeight + ' exceeded');
-      return;
+      errors.push('Maximum height ' + maximumHeight + ' exceeded');
     }
 
     // set URL
-    const url = new URL(decodeURIComponent(req.params.url));
+    const url = new URL(decodeURIComponent(request.params.url));
 
     // check port
     if (url.port && !permittedPorts.includes(url.port)) {
       // if we're using a non-default port that hasn't been permitted, block
-      sendError(res, 'port ' + url.port + ' not permitted');
-      return;
+      errors.push('Port ' + url.port + ' not permitted');
     }
 
     // check protocol
     if (!permittedProtocols.includes(url.protocol.slice(0, -1))) {
-      sendError(res, 'protocol ' + url.protocol.slice(0, -1) + ' not permitted');
+      errors.push('Protocol ' + url.protocol.slice(0, -1) + ' not permitted');
+    }
+
+    // if we have errors at this stage, don't bother firing up the browser...
+    if (errors.length) {
+      response.end(JSON.stringify({errors}));
       return;
     }
 
@@ -99,8 +101,8 @@ app.get('/screenshot/:url', async (req, res) => {
 
     // set offset (for screenshot)
     let offset = 0;
-    if (req.query.offset && !isNaN(parseInt(req.query.offset))) {
-      offset = parseInt(req.query.offset);
+    if (request.query.offset && !isNaN(parseInt(request.query.offset))) {
+      offset = parseInt(request.query.offset);
     }
 
     // get document height
@@ -119,16 +121,12 @@ app.get('/screenshot/:url', async (req, res) => {
       'encoding': 'base64',
       'type': 'jpeg'
     });
-    res.end(JSON.stringify({image}));
+    response.end(JSON.stringify({image}));
     await browser.close();
-  } catch(exception) {;
-    // generate error and set content type
-    sendError(res, exception.message);
+  } catch(exception) {
+    errors.push(exception.message);
+    response.end(JSON.stringify({errors}));
   }
 });
 
 app.listen(port, () => console.log(`ip6only API listening on port ${port}!`));
-
-function sendError(response, error) {
-  response.end(JSON.stringify({error}));
-}
