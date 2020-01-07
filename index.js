@@ -38,7 +38,7 @@ let height = undefined;
 
 app.get('/favicon.ico', (request, response) => { return response.status(404).send() });
 
-app.get('/screenshot/:url', async (request, response) => {
+app.get('/v1/screenshot/:url', async (request, response) => {
   let errors = [];
 
   try {
