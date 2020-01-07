@@ -120,6 +120,7 @@ app.get('/screenshot/:url', async (req, res) => {
       'type': 'jpeg'
     });
     res.end(JSON.stringify({image}));
+    await browser.close();
   } catch(exception) {;
     // generate error and set content type
     sendError(res, exception.message);
