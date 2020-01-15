@@ -36,7 +36,7 @@ const maximumHeight = 1200;
 let width = undefined;
 let height = undefined;
 
-app.get('/favicon.ico', (request, response) => { return response.status(404).send() });
+app.get('/favicon.ico', (request, response) => { return response.status(404).end() });
 
 app.get('/v1/screenshot/:url', async (request, response) => {
   let errors = [];
@@ -82,7 +82,7 @@ app.get('/v1/screenshot/:url', async (request, response) => {
 
     // if we have errors at this stage, don't bother firing up the browser...
     if (errors.length) {
-      response.end(JSON.stringify({errors}));
+      response.json({errors});
       return;
     }
 
@@ -92,41 +92,47 @@ app.get('/v1/screenshot/:url', async (request, response) => {
       'executablePath': '/usr/bin/chromium-browser'
     });
 
-    // set up page and viewport
-    const page = await browser.newPage();
-    page.setViewport({ width, height });
+    // if anything fails beyond here, close the browser afterwards
+    try {
+      // set up page and viewport
+      const page = await browser.newPage();
+      page.setViewport({ width, height });
 
-    // attempt to navigate to the URL
-    await page.goto(url);
+      // attempt to navigate to the URL
+      await page.goto(url);
 
-    // set offset (for screenshot)
-    let offset = 0;
-    if (request.query.offset && !isNaN(parseInt(request.query.offset))) {
-      offset = parseInt(request.query.offset);
+      // set offset (for screenshot)
+      let offset = 0;
+      if (request.query.offset && !isNaN(parseInt(request.query.offset))) {
+        offset = parseInt(request.query.offset);
+      }
+
+      // get document height
+      const documentHeight = await page.evaluate(() => {
+        return document.documentElement.scrollHeight;
+      });
+
+      // check we're not exceeding the document bounds
+      if (documentHeight < (offset + height)) {
+        height = documentHeight - offset;
+      }
+
+      // take screenshot and set content type
+      const image = await page.screenshot({
+        'clip': {'x': 0, 'y': offset, width, height},
+        'encoding': 'base64',
+        'type': 'jpeg'
+      });
+      response.json({image});
+    } catch(exception) {
+      errors.push(exception.message);
+      response.json({errors});
+    } finally {
+      await browser.close();
     }
-
-    // get document height
-    const documentHeight = await page.evaluate(() => {
-      return document.documentElement.scrollHeight;
-    });
-
-    // check we're not exceeding the document bounds
-    if (documentHeight < (offset + height)) {
-      height = documentHeight - offset;
-    }
-
-    // take screenshot and set content type
-    const image = await page.screenshot({
-      'clip': {'x': 0, 'y': offset, width, height},
-      'encoding': 'base64',
-      'type': 'jpeg'
-    });
-    response.end(JSON.stringify({image}));
   } catch(exception) {
     errors.push(exception.message);
-    response.end(JSON.stringify({errors}));
-  } finally {
-    await browser.close();
+    response.json({errors});
   }
 });
 
