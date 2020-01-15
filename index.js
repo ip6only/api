@@ -122,10 +122,11 @@ app.get('/v1/screenshot/:url', async (request, response) => {
       'type': 'jpeg'
     });
     response.end(JSON.stringify({image}));
-    await browser.close();
   } catch(exception) {
     errors.push(exception.message);
     response.end(JSON.stringify({errors}));
+  } finally {
+    await browser.close();
   }
 });
 
