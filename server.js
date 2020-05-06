@@ -60,7 +60,7 @@ app.get('/v1/screenshot/:url', async (request, response) => {
     }
 
     // launch browser
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({args: ['--no-sandbox', '--disable-setuid-sandbox']});
 
     // if anything fails beyond here, close the browser afterwards
     try {
