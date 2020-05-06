@@ -18,6 +18,6 @@
   "homepage": "https://www.ip6on.ly/",
   "dependencies": {
     "express": "^4.17.1",
-    "puppeteer": "^2.0.0"
+    "puppeteer": "^3.0.2"
   }
 }
