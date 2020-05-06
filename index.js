@@ -1,7 +1,7 @@
 #!/usr/bin/node
 
 const express = require('express');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -87,10 +87,7 @@ app.get('/v1/screenshot/:url', async (request, response) => {
     }
 
     // launch browser
-    const browser = await puppeteer.launch({
-      'args': ['--headless', '--disable-gpu', '--disable-features=VizDisplayCompositor'],
-      'executablePath': '/usr/bin/chromium-browser'
-    });
+    const browser = await puppeteer.launch();
 
     // if anything fails beyond here, close the browser afterwards
     try {

@@ -18,6 +18,6 @@
   "homepage": "https://github.com/BenjaminEHowe/ip6only-api#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "puppeteer-core": "^2.0.0"
+    "puppeteer": "^2.0.0"
   }
 }
