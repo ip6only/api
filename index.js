@@ -1,37 +1,10 @@
 #!/usr/bin/node
 
+const constants = require('./constants');
 const express = require('express');
 const puppeteer = require('puppeteer');
 
 const app = express();
-const port = process.env.PORT || 3000;
-
-const permittedPorts = [
-  '80',
-  '443',
-  '591',
-  '2082',
-  '2083',
-  '2086',
-  '2087',
-  '2095',
-  '2096',
-  '2222',
-  '8008',
-  '8080',
-  '8443',
-  '8880'
-];
-
-const permittedProtocols = [
-  'http',
-  'https'
-];
-
-const defaultWidth = 1280;
-const maximumWidth = 1920;
-const defaultHeight = 800;
-const maximumHeight = 1200;
 
 let width = undefined;
 let height = undefined;
@@ -43,40 +16,40 @@ app.get('/v1/screenshot/:url', async (request, response) => {
 
   try {
     // set width
-    width = defaultWidth;
+    width = constants.WIDTH_DEFAULT;
     if (request.query.width) {
       width = parseInt(request.query.width);
     }
     if (isNaN(width)) {
       errors.push('Width ' + request.query.width + ' doesn\'t appear to be a number');
     }
-    if (maximumWidth < width) {
-      errors.push('Maximum width ' + maximumWidth + ' exceeded');
+    if (constants.WIDTH_MAXIMUM < width) {
+      errors.push('Maximum width ' + constants.WIDTH_MAXIMUM + ' exceeded');
     }
 
     // set height
-    height = defaultHeight;
+    height = constants.HEIGHT_DEFAULT;
     if (request.query.height) {
       height = parseInt(request.query.height);
     }
     if (isNaN(height)) {
       errors.push('Height ' + request.query.height + ' doesn\'t appear to be a number');
     }
-    if (maximumHeight < height) {
-      errors.push('Maximum height ' + maximumHeight + ' exceeded');
+    if (constants.HEIGHT_MAXIMUM < height) {
+      errors.push('Maximum height ' + constants.HEIGHT_MAXIMUM + ' exceeded');
     }
 
     // set URL
     const url = new URL(decodeURIComponent(request.params.url));
 
     // check port
-    if (url.port && !permittedPorts.includes(url.port)) {
+    if (url.port && !constants.PERMITTED_PORTS.includes(url.port)) {
       // if we're using a non-default port that hasn't been permitted, block
       errors.push('Port ' + url.port + ' not permitted');
     }
 
     // check protocol
-    if (!permittedProtocols.includes(url.protocol.slice(0, -1))) {
+    if (!constants.PERMITTED_PROTOCOLS.includes(url.protocol.slice(0, -1))) {
       errors.push('Protocol ' + url.protocol.slice(0, -1) + ' not permitted');
     }
 
@@ -133,4 +106,4 @@ app.get('/v1/screenshot/:url', async (request, response) => {
   }
 });
 
-app.listen(port, () => console.log(`ip6only API listening on port ${port}!`));
+app.listen(constants.PORT, () => console.log(`ip6only API listening on port ${constants.PORT}!`));
