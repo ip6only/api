@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BenjaminEHowe/ip6only-api.git"
+    "url": "git+https://github.com/ip6only/api"
   },
   "author": "Benjamin Howe",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/BenjaminEHowe/ip6only-api/issues"
+    "url": "https://github.com/ip6only/api/issues"
   },
-  "homepage": "https://github.com/BenjaminEHowe/ip6only-api#readme",
+  "homepage": "https://www.ip6on.ly/",
   "dependencies": {
     "express": "^4.17.1",
     "puppeteer": "^2.0.0"
