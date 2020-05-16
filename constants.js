@@ -1,6 +1,6 @@
 module.exports = {
-	HEIGHT_DEFAULT: 800,
-	HEIGHT_MAXIMUM: 1200,
+	HEIGHT_DEFAULT: process.env.HEIGHT_DEFAULT || 720,
+	HEIGHT_MAXIMUM: process.env.HEIGHT_MAXIMUM || 10000,
 	PERMITTED_PORTS: [
 		'80',
 		'443',
@@ -22,6 +22,6 @@ module.exports = {
 		'https'
 	],
 	PORT: process.env.PORT || 8080,
-	WIDTH_DEFAULT: 1280,
-	WIDTH_MAXIMUM: 1920,
+	WIDTH_DEFAULT: process.env.WIDTH_DEFAULT || 1280,
+	WIDTH_MAXIMUM: process.env.WIDTH_MAXIMUM || 1920,
 }
