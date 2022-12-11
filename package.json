@@ -17,7 +17,7 @@
   },
   "homepage": "https://www.ip6on.ly/",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "puppeteer": "^5.5.0"
   }
 }
